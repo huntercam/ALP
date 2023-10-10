@@ -3,7 +3,6 @@ module Untyped where
 import           Control.Monad
 import           Data.List
 import           Data.Maybe
-
 import           Common
 
 ----------------------------------------------
@@ -52,9 +51,10 @@ eval' (l1 :@: l2) s = let
 
 quote :: Value -> Term
 quote v = quote' v 0
+-- quote = undefined
 
 quote' :: Value -> Int -> Term
-quote' (VLam f) i =  Lam ( (quote' (f (VNeutral(NFree (Quote i) ) ) ) (i+1) )  )
+quote' (VLam f) i  = Lam (quote' (f (VNeutral(NFree (Quote i) ) ) ) (i+1) )  
 quote' (VNeutral vn) i = case vn of 
                     NFree name -> case name of
                                 Global s -> (Free name)

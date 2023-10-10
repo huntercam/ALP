@@ -29,6 +29,9 @@ def mult = \n m s z . n (m s) z
 def pred = \ n . fst (n (\p . pair (snd p) (suc (snd p))) (pair zero zero))
 
 def minus = \n m s z .(m pred n)
+def minus2 = \n m .(m pred n)
+
+def equal = \n m. ( is0(minus2 n m) ) ( is0(minus2 m n) ) false
 
 --Listas
 def nil = \c n . n
@@ -51,11 +54,27 @@ def fact = Y (\f n. (is0 n) (suc zero) (mult n (f (pred n))))
 -- bottom
 def bottom = (\x . x x) (\x . x x)
 
+--mod n p = if isnotzero (resta p n) then n else mod (n-p) p 
+def B = \f n p. (isnot0 (minus2 p n)) n (f (minus2 n p) p)
+def mod = Y B
+
 
 --divisores n = divisores' n 1
 --divisores' n n = []
 --divisores' n p = if n%p == 0 then p : ( divisores' n (p+1) )
---                             else ( divisores' n (p+1) )
---mod n p = if isnotzero (resta p n) then n else mod (n-p) p 
-def B = \f n p. (isnot0 (minus p n)) n (f (resta n p) p)
-def mod = Y B
+--                          else ( divisores' n (p+1) )
+
+-- foldn n nil (\x y ->  (is0 mod n x)  () () ? x :: y : y)
+
+-- def returnpair = \n l. pair (suc n) l
+-- def divisores3 = \n. n  (\p. ( is0 (mod n (fst p) ) ) ( returnpair (fst p) (cons (fst p) (snd p) ) ) (returnpair (fst p) (snd p) ) ) (pair 0 nil)
+
+-- def divisoresf = \n . snd (divisores2 n)
+-- def divisores2 = \n. n  (\p. ( is0 (mod n (fst p) ) ) ( pair (suc(fst p)) (cons (fst p) (snd p) ) ) (pair (suc(fst p)) (snd p) ) ) (pair 0 nil)
+
+-- def divisores = \n. n  (\x y. ( is0 (mod n x) ) (cons x y) y) nil 
+
+
+def DIVS = \f n p.  (equal n p) (nil) ( is0(mod n p) (cons p (f n (suc p) ) ) (f n (suc p) ) )
+def divisores = (\n.  (is0 n) (nil) ((Y DIVS) n 1) )
+
