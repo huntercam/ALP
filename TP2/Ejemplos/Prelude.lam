@@ -21,10 +21,14 @@ def suc = \n s z . s (n s z)
 
 def is0 = \n . n (\ x . false) true
 
+def isnot0 = \n . n (\ x . true) false
+
 def add = \n m s z . n s (m s z)
 def mult = \n m s z . n (m s) z
 
 def pred = \ n . fst (n (\p . pair (snd p) (suc (snd p))) (pair zero zero))
+
+def minus = \n m s z .(m pred n)
 
 --Listas
 def nil = \c n . n
@@ -46,3 +50,12 @@ def fact = Y (\f n. (is0 n) (suc zero) (mult n (f (pred n))))
 
 -- bottom
 def bottom = (\x . x x) (\x . x x)
+
+
+--divisores n = divisores' n 1
+--divisores' n n = []
+--divisores' n p = if n%p == 0 then p : ( divisores' n (p+1) )
+--                             else ( divisores' n (p+1) )
+--mod n p = if isnotzero (resta p n) then n else mod (n-p) p 
+def B = \f n p. (isnot0 (minus p n)) n (f (resta n p) p)
+def mod = Y B

@@ -10,7 +10,7 @@ import           Common
 import           Untyped
 
 ----------------------------------------------
--- Seccón 2 - Representacón de Lambda Términos 
+-- Sección 2 - Representación de Lambda Términos 
 -- Ejercicio 1
 ----------------------------------------------
 
