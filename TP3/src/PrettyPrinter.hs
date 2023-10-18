@@ -46,6 +46,9 @@ pp ii vs (Let e1 e2) =
     <> text " in "
     <> pp (ii + 1) vs e2
 
+pp ii vs (Unit) =
+  text "unit"
+
 
 isLam :: Term -> Bool
 isLam (Lam _ _) = True
@@ -58,6 +61,7 @@ isApp _         = False
 -- pretty-printer de tipos
 printType :: Type -> Doc
 printType EmptyT = text "E"
+printType UnitT = text "Unit"
 printType (FunT t1 t2) =
   sep [parensIf (isFun t1) (printType t1), text "->", printType t2]
 
