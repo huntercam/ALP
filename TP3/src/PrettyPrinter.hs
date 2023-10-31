@@ -49,6 +49,20 @@ pp ii vs (Let e1 e2) =
 pp ii vs (Unit) =
   text "unit"
 
+pp ii vs (Fst x) =
+  text "fst"
+  <> pp ii vs x
+
+pp ii vs (Snd x) =
+  text "snd"
+  <> pp ii vs x
+
+pp ii vs (Pair x y) =
+  text "("
+  <> pp ii vs x
+  <> text ","
+  <> pp ii vs y
+  <> text ")"
 
 isLam :: Term -> Bool
 isLam (Lam _ _) = True
@@ -64,6 +78,12 @@ printType EmptyT = text "E"
 printType UnitT = text "Unit"
 printType (FunT t1 t2) =
   sep [parensIf (isFun t1) (printType t1), text "->", printType t2]
+printType (PairT t1 t2) =
+  text "("
+  <> printType t1
+  <> text ","
+  <> printType t2
+  <> text ")"
 
 
 isFun :: Type -> Bool
