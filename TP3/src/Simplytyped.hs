@@ -65,6 +65,7 @@ eval e (Lam t u1 :@: u2) = let v2 = eval e u2 in eval e (sub 0 (quote v2) u1)
 eval e (Let t1 t2) = let v2 = eval e t1 in eval e (sub 0 (quote v2) t2)
 eval e (Unit) = VUnit
 eval e (Zero) = VNum NZero
+eval e (Suc t) = VNum NZero
 eval e (Pair t1 t2) = VPair (eval e t1) (eval e t2)
 eval e (Fst t) = case (eval e t) of
           (VPair t1 t2) -> t1
@@ -75,6 +76,8 @@ eval e (Snd t) = case (eval e t) of
 eval e (u        :@: v      ) = case eval e u of
   VLam t u' -> eval e (Lam t u' :@: v)
   _         -> error "Error de tipo en run-time, verificar type checker"
+
+
 
 
 -----------------------
