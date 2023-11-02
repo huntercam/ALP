@@ -14,6 +14,7 @@ import Data.Char
 %tokentype { Token }
 %lexer {lexer} {TEOF}
 
+
 %token
     '='     { TEquals }
     ':'     { TColon }
