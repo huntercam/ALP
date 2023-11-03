@@ -3,15 +3,3 @@ def K = \x:E.\y:E.x
 def S = \x:E->E->E.\y:E->E.\z:E.(x z) (y z)
 def U = \x:Unit. x
 
-def sig = \x:Nat. suc x
-def ack = \n:Nat. R sig (\f:Nat->Nat. \y:Nat. \m:Nat. R (f (suc 0) ) (\r:Nat. \x:Nat. f r) m ) n
-
-def dos = sig(sig(0))
-def tres = sig(sig (sig 0))
-def cuatro = sig(tres)
-
-def pred = \x:Nat. R 0 (\x:Nat. \y:Nat. y) x
-
-def uno = pred(dos)
-
-def par = (unit, sig 0)

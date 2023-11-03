@@ -62,11 +62,6 @@ NAbs    :: { LamTerm }
         : NAbs Atom                    { LApp $1 $2 }
         | Atom                         { $1 }
 
--- fst (\x.(x,x)) 0                Fst tiene menor precedencia que la aplicacion
--- fst \x.((x,x) 0)                La abstraccion tiene la mayor precedencia de todos
--- Nat
--- R Suc 0 a b                     Para pasar exp's a R hay que usar parentesis
-
 Atom    :: { LamTerm }
         : VAR                          { LVar $1 }  
         | 'unit'                       { LUnit }
