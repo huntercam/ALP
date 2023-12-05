@@ -61,10 +61,21 @@ eval _ (Bound _             ) = error "variable ligada inesperada en eval"
 eval e (Free  n             ) = fst $ fromJust $ lookup n e
 eval _ (Lam      t   u      ) = VLam t u
 eval e (Lam _ u  :@: Lam s v) = eval e (sub 0 (Lam s v) u)
-eval e (Lam t u1 :@: u2) = let v2 = eval e u2 in eval e (sub 0 (quote v2) u1)
-eval e (Let t1 t2) = let v2 = eval e t1 in eval e (sub 0 (quote v2) t2)
-eval e (Unit) = VUnit
-eval e (Zero) = VNum NZero
+eval e (Lam t u1 :@: u2     ) = let v2 = eval e u2 in eval e (sub 0 (quote v2) u1)
+eval e (Let t1 t2           ) = let v2 = eval e t1 in eval e (sub 0 (quote v2) t2)
+eval e (Unit                ) = VUnit
+eval e (Zero                ) = VNum NZero
+eval e (Suc   u             ) = case eval e u of
+          VNum n      -> VNum (NSuc n)
+          _           -> error "Error de tipo en run-time, verificar type checker"
+
+eval e (Rec  u   v   Zero   ) = eval e u
+eval e (Rec  u   v   (Suc n)) = eval e ((v :@: Rec u v n) :@: n)
+eval e (Rec  u   v   n      ) = case eval e n of
+  VNum n  -> eval e (Rec  u   v  (quote (VNum n)))
+  _       -> error "Error de tipo en run-time, verificar type checker"
+
+
 eval e (Pair t1 t2) = VPair (eval e t1) (eval e t2)
 eval e (Fst t) = case (eval e t) of
           (VPair t1 t2) -> t1
@@ -85,6 +96,8 @@ quote :: Value -> Term
 quote (VLam t f) = Lam t f
 quote (VUnit) = Unit
 quote (VPair t1 t2) = Pair (quote t1) (quote t2)
+quote (VNum NZero)    = Zero
+quote (VNum (NSuc n)) = Suc (quote (VNum n) )
 
 ----------------------
 --- type checker
@@ -124,6 +137,9 @@ notfoundError n = err $ show n ++ " no está definida."
 notpairError :: Type -> Either String Type
 notpairError t1 = err $ render (printType t1) ++ " no es un par."
 
+notnatError :: Type -> Either String Type
+notnatError t1 = err $ render (printType t1) ++ " no es un natural."
+
 infer' :: Context -> NameEnv Value Type -> Term -> Either String Type
 infer' c _ (Bound i) = ret (c !! i)
 infer' _ e (Free  n) = case lookup n e of
@@ -143,11 +159,27 @@ infer' c e (Fst t) = infer' c e t >>= \tt ->
     _           -> notpairError tt
 infer' c e (Snd t) = infer' c e t >>= \tt -> 
   case tt of
-    PairT t1 t2 -> ret t1
+    PairT t1 t2 -> ret t2
     _           -> notpairError tt
-infer' c e (Pair t1 t2) = infer' c e t1 >>= \tt1 -> infer' c e t2 >>= \tt2 -> ret $ PairT tt1 tt2
-  --case tt of
-  --  FunT t1 t2 -> if (tu == t1) then ret t2 else matchError t1 tu
-  --  _          -> notfunError tt
+infer' c e (Zero)  = ret NatT
+infer' c e (Suc n) = (infer' c e n) >>= \tn -> 
+  case tn of
+    NatT -> ret NatT
+    _    -> (notnatError tn)
+  
 
-----------------------------------
+
+infer' c e (Rec t1 t2 t3) = do
+    tt1 <- infer' c e t1
+    tt2 <- infer' c e t2
+    tt3 <- infer' c e t3
+    
+    tt  <- case tt3 of
+        NatT -> case tt2 of
+            (FunT tt4 (FunT NatT tt5) ) -> if (tt1 == tt4) then
+                                            if (tt4 == tt5) then ret tt1 
+                                                            else notfunError tt2
+                                          else notfunError tt2
+            tt                         -> matchError (FunT tt1 (FunT NatT tt1) ) tt
+        _    -> notnatError tt3
+    return tt

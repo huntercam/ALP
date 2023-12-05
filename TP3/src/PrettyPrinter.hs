@@ -50,11 +50,11 @@ pp ii vs (Unit) =
   text "unit"
 
 pp ii vs (Fst x) =
-  text "fst"
+  text "fst "
   <> pp ii vs x
 
 pp ii vs (Snd x) =
-  text "snd"
+  text "snd "
   <> pp ii vs x
 
 pp ii vs (Pair x y) =
@@ -63,6 +63,21 @@ pp ii vs (Pair x y) =
   <> text ","
   <> pp ii vs y
   <> text ")"
+
+pp ii vs (Suc x) =
+  text "suc "
+  <> pp ii vs x
+
+pp ii vs (Zero) =
+  text "0"
+
+pp ii vs (Rec t1 t2 t3) =
+  text "R "
+  <> pp ii vs t1
+  <> text " "
+  <> pp ii vs t2
+  <> text " "
+  <> pp ii vs t3
 
 isLam :: Term -> Bool
 isLam (Lam _ _) = True
@@ -84,7 +99,7 @@ printType (PairT t1 t2) =
   <> text ","
   <> printType t2
   <> text ")"
-
+printType (NatT) = text "Nat"
 
 isFun :: Type -> Bool
 isFun (FunT _ _) = True
@@ -95,6 +110,14 @@ fv (Bound _         ) = []
 fv (Free  (Global n)) = [n]
 fv (t   :@: u       ) = fv t ++ fv u
 fv (Lam _   u       ) = fv u
+fv (Let t1 t2       ) = fv t1 ++ fv t2
+fv (Unit            ) = [] 
+fv (Snd u           ) = fv u
+fv (Fst t           ) = fv t 
+fv (Pair t1 t2      ) = fv t1 ++ fv t2
+fv (Zero            ) = []
+fv (Suc t           ) = fv t
+fv (Rec t1 t2 t3    ) = fv t1 ++ fv t2 ++ fv t3
 
 ---
 printTerm :: Term -> Doc

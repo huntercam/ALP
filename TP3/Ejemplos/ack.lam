@@ -1,0 +1,2 @@
+def sig = \x:Nat. suc x
+def ack = \n:Nat. R sig (\f:Nat->Nat. \y:Nat. \m:Nat. R (f (suc 0) ) (\r:Nat. \x:Nat. f r) m ) n

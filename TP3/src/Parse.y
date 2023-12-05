@@ -35,6 +35,7 @@ import Data.Char
     DEF     { TDef }
     LET     { TLet }
     UNITT   { TUnitT }
+    NATT    { TNatT }
 
     
 %right VAR
@@ -61,11 +62,6 @@ NAbs    :: { LamTerm }
         : NAbs Atom                    { LApp $1 $2 }
         | Atom                         { $1 }
 
--- fst (\x.(x,x)) 0                Fst tiene menor precedencia que la aplicacion
--- fst \x.((x,x) 0)                La abstraccion tiene la mayor precedencia de todos
--- Nat
--- R Suc 0 a b                     Para pasar exp's a R hay que usar parentesis
-
 Atom    :: { LamTerm }
         : VAR                          { LVar $1 }  
         | 'unit'                       { LUnit }
@@ -76,6 +72,7 @@ Atom    :: { LamTerm }
     
 Type    : TYPEE                        { EmptyT }
         | UNITT                        { UnitT }
+        | NATT                         { NatT }
         | Type '->' Type               { FunT $1 $3 }
         | '(' Type ')'                 { $2 }
         | '(' Type ',' Type ')'        { PairT $2 $4 }
@@ -133,6 +130,7 @@ data Token = TVar String
                | TZero
                | TSuc
                | TRec
+               | TNatT
                deriving Show
 
 ----------------------------------
@@ -154,7 +152,7 @@ lexer cont s = case s of
                     (':':cs) -> cont TColon cs
                     ('=':cs) -> cont TEquals cs
                     (',':cs) -> cont TComma cs
-                    ('0', cs) -> cont TZero cs
+                    ('0': cs) -> cont TZero cs
                     unknown -> \line -> Failed $ 
                      "Línea "++(show line)++": No se puede reconocer "++(show $ take 10 unknown)++ "..."
                     where lexVar cs = case span isAlpha cs of
@@ -168,6 +166,7 @@ lexer cont s = case s of
                               ("suc", rest) -> cont TSuc rest
                               ("R", rest) -> cont TRec rest
                               ("Unit", rest) -> cont TUnitT rest
+                              ("Nat", rest) -> cont TNatT rest
                               (var,rest)    -> cont (TVar var) rest
                           consumirBK anidado cl cont s = case s of
                               ('-':('-':cs)) -> consumirBK anidado cl cont $ dropWhile ((/=) '\n') cs
