@@ -19,16 +19,24 @@ import Data.Char
     ':'     { TColon }
     '\\'    { TAbs }
     '.'     { TDot }
+    ','     { TComma }
     '('     { TOpen }
     ')'     { TClose }
     '->'    { TArrow }
     'in'    { TIn }
+    'unit'  { TUnit }
+    'fst'   { TFst }
+    'snd'   { TSnd }
+    'R'     { TRec }
+    'suc'   { TSuc }
+    '0'     { TZero }
     VAR     { TVar $$ }
     TYPEE   { TTypeE }
     DEF     { TDef }
     LET     { TLet }
-    
+    UNITT   { TUnitT }
 
+    
 %right VAR
 %left '=' 
 %right '->'
@@ -43,19 +51,34 @@ Defexp  : DEF VAR '=' Exp              { Def $2 $4 }
 Exp     :: { LamTerm }
         : '\\' VAR ':' Type '.' Exp    { LAbs $2 $4 $6 }
         | NAbs                         { $1 }
-        | LET VAR '=' Exp 'in' Exp       { LLet $2 $4 $6 } 
+        | LET VAR '=' Exp 'in' Exp     { LLet $2 $4 $6 } 
+        | 'fst' Exp                    { LFst $2 }
+        | 'snd' Exp                    { LSnd $2 }
+        | 'suc' Exp                    { LSuc $2}
+        | 'R' Atom Atom Exp            { LRec $2 $3 $4 }
 
 NAbs    :: { LamTerm }
         : NAbs Atom                    { LApp $1 $2 }
         | Atom                         { $1 }
 
+-- fst (\x.(x,x)) 0                Fst tiene menor precedencia que la aplicacion
+-- fst \x.((x,x) 0)                La abstraccion tiene la mayor precedencia de todos
+-- Nat
+-- R Suc 0 a b                     Para pasar exp's a R hay que usar parentesis
+
 Atom    :: { LamTerm }
         : VAR                          { LVar $1 }  
+        | 'unit'                       { LUnit }
+        | '0'                          { LZero }
         | '(' Exp ')'                  { $2 }
+        | '(' Exp ',' Exp ')'          { LPair $2 $4 }
 
+    
 Type    : TYPEE                        { EmptyT }
+        | UNITT                        { UnitT }
         | Type '->' Type               { FunT $1 $3 }
         | '(' Type ')'                 { $2 }
+        | '(' Type ',' Type ')'        { PairT $2 $4 }
 
 Defs    : Defexp Defs                  { $1 : $2 }
         |                              { [] }
@@ -102,6 +125,14 @@ data Token = TVar String
                | TEOF
                | TLet
                | TIn
+               | TUnit
+               | TUnitT
+               | TComma
+               | TFst
+               | TSnd
+               | TZero
+               | TSuc
+               | TRec
                deriving Show
 
 ----------------------------------
@@ -122,6 +153,8 @@ lexer cont s = case s of
                     (')':cs) -> cont TClose cs
                     (':':cs) -> cont TColon cs
                     ('=':cs) -> cont TEquals cs
+                    (',':cs) -> cont TComma cs
+                    ('0', cs) -> cont TZero cs
                     unknown -> \line -> Failed $ 
                      "Línea "++(show line)++": No se puede reconocer "++(show $ take 10 unknown)++ "..."
                     where lexVar cs = case span isAlpha cs of
@@ -129,6 +162,12 @@ lexer cont s = case s of
                               ("def",rest)  -> cont TDef rest
                               ("let" , rest ) -> cont TLet rest
                               ("in", rest) -> cont TIn rest
+                              ("unit", rest) -> cont TUnit rest
+                              ("fst", rest) -> cont TFst rest
+                              ("snd", rest) -> cont TSnd rest
+                              ("suc", rest) -> cont TSuc rest
+                              ("R", rest) -> cont TRec rest
+                              ("Unit", rest) -> cont TUnitT rest
                               (var,rest)    -> cont (TVar var) rest
                           consumirBK anidado cl cont s = case s of
                               ('-':('-':cs)) -> consumirBK anidado cl cont $ dropWhile ((/=) '\n') cs
