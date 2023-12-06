@@ -12,8 +12,8 @@ import           Data.Strict.Tuple
 import           Control.Monad                  ( liftM
                                                 , ap
                                                 )
-import           Control.Monad.Writer.Lazy
 import           PPLis
+import           Text.PrettyPrint
 
 -- Entornos
 type Env = M.Map Variable Int
@@ -32,11 +32,11 @@ newtype StateErrorTrace a =
   StateErrorTrace { runStateErrorTrace :: Env -> (Either Error a, Env, Trace) }
 
 instance Monad StateErrorTrace where
-  return x = StateErrorTrace(\s -> (Right x, s, "") )
+  return x = StateErrorTrace(\s -> (Right x, s, empty ) )
   m >>= f = StateErrorTrace (\s -> case ( ( runStateErrorTrace m ) s) of
                                     (Left err, s', tr) -> (Left err, s', tr )
                                     (Right x, s', tr) ->  case ( (runStateErrorTrace (f x)) s') of
-                                                  (x', s'', tr') -> (x', s'', tr ++ tr')
+                                                  (x', s'', tr') -> (x', s'', tr <+> tr')
                                      )
 
 -- Recuerde agregar las siguientes instancias para calmar al GHC:
@@ -57,23 +57,29 @@ instance MonadTrace StateErrorTrace where
 -- Ejercicio 3.d: Dar una instancia de MonadError para StateErrorTrace.
 -- COMPLETAR
 instance MonadError StateErrorTrace where
-  throw err = StateErrorTrace (\s -> ( Left err , s , "" ) )
+  throw err = StateErrorTrace (\s -> ( Left err , s , empty ) )
 
 -- Ejercicio 3.e: Dar una instancia de MonadState para StateErrorTrace.
 -- COMPLETAR
 
 instance MonadState StateErrorTrace where
-  update var val = StateErrorTrace (\s -> ( Right () , M.insert var val s , "" ) )
+  update var val = StateErrorTrace (\s -> ( Right () , M.insert var val s , empty ) )
   lookfor var = StateErrorTrace (\s ->  case (M.lookup var s) of 
-                                          Nothing -> (Left UndefVar, s, "")
-                                          Just x -> ( Right x , s , "") )
+                                          Nothing -> (Left UndefVar, s, empty)
+                                          Just x -> ( Right x , s , empty) )
 
 -- Ejercicio 3.f: Implementar el evaluador utilizando la monada StateErrorTrace.
 -- Evalua un programa en el estado nulo
 
-eval :: Comm -> (Maybe Error, Env, Trace)
+eval :: Comm -> Doc
 eval c = let (x, s, tr) = runStateErrorTrace (stepCommStar c) initEnv
-          in ( either Just (const Nothing) x , s , tr)
+          in 
+            tr $+$ text "Errores" <+> (text (show (either Just (const Nothing) x)) ) $+$ text "Estado" <+>  (text  (show s) )
+            
+--( either Just (const Nothing) x , s , tr)
+
+--( either Just (const Nothing) x , s , tr)
+
 
 --case runStateErrorTrace (stepCommStar c) initEnv of
 --          (Left err, s, tr) -> (Just err, s, tr)
@@ -95,17 +101,17 @@ stepComm (Seq c1 c2) = do
 stepComm (Let r e) = do
                       v <- evalExp e
                       update r v
-                      write ( "Let " ++ r ++ " = " ++ (show v) ++ "\n")
+                      write ( text "Let " <+> text r <+> text " = " <+> text (show v) <+> text "\n")
                       return Skip
 stepComm (IfThenElse e c1 c2) = do
                               v  <- evalExp e        
-                              write ( "## Eval " ++ (renderExp e) ++ " ~> " ++ (show v) ++ "\n")
+                              write ( text "## Eval " <+> text (renderExp e) <+>  text" ~> " <+> text (show v) <+> text "\n")
                               if v
                                 then return c1
                                 else return c2
 stepComm (While e1 c1) = do
                             v1 <- evalExp e1
-                            write ( "## Eval " ++ (renderExp e1) ++ " ~> " ++ (show v1) ++ "\n")
+                            write ( text "## Eval " <+> text (renderExp e1) <+>  text" ~> " <+> text (show v1) <+> text "\n")
                             case v1 of
                               True -> return (Seq c1 (While e1 c1) )
                               False -> return Skip       
@@ -172,7 +178,7 @@ evalExp (NEq e1 e2) = do
 evalExp (EAssgn r e) = do
                         v1 <- evalExp e
                         update r v1
-                        write ( "Let " ++ r ++ " = " ++ (show v1) ++ "\n" )
+                        write ( text "Let " <+> text r <+> text " = " <+> text (show v1) <+> text "\n")
                         return v1
 evalExp (ESeq e1 e2) = do
                         evalExp e1

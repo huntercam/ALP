@@ -1,4 +1,7 @@
+
 module AST where
+
+import           Text.PrettyPrint
 
 -- Identificadores de Variable
 type Variable = String
@@ -44,4 +47,4 @@ pattern IfThen b c = IfThenElse b c Skip
 
 data Error = DivByZero | UndefVar deriving (Eq, Show)
 
-type Trace = String
+type Trace = Doc
